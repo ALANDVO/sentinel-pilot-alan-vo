@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "sentinel-pilot-alan-vo",
+  "owner": "ALANDVO",
+  "email": "alanvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "summary": "Work in progress: sentinel-pilot-alan-vo",
+  "workflows": [
+    "Create and configure Minecraft instances with version/loader/JVM settings",
+    "Install and manage mods with version tracking and enable/disable toggles",
+    "Secure authentication via Keycloak OIDC with role-based access control"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "status": "work-in-progress"
+}
