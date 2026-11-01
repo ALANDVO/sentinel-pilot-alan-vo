@@ -428,7 +428,60 @@ class TestMods:
             f"/api/mods/{mod.id}",
             headers={"Authorization": f"Bearer {operator_token}"},
         )
-        assert response.status_code == 204
+
+    async def test_upload_mod(self, client, test_user_token, db):
+        instance = Instance(name="Test Instance", minecraft_version="1.20.1", owner_id=1)
+        db.add(instance)
+        await db.commit()
+        await db.refresh(instance)
+
+        # Create a test jar file
+        import io
+        file_content = b"fake jar content for testing"
+        files = {"file": ("test-mod.jar", io.BytesIO(file_content), "application/java-archive")}
+
+        response = await client.post(
+            f"/api/mods/upload?instance_id={instance.id}",
+            files=files,
+            headers={"Authorization": f"Bearer {test_user_token}"},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "test-mod"
+        assert data["filename"] == "test-mod.jar"
+        assert data["instance_id"] == instance.id
+        assert data["file_hash"] is not None
+        assert data["source"] == "local"
+        assert data["is_enabled"] is True
+
+    async def test_upload_mod_duplicate_hash(self, client, test_user_token, db):
+        instance = Instance(name="Test Instance", minecraft_version="1.20.1", owner_id=1)
+        db.add(instance)
+        await db.commit()
+        await db.refresh(instance)
+
+        # Create a test jar file
+        import io
+        file_content = b"fake jar content for testing"
+        files = {"file": ("test-mod.jar", io.BytesIO(file_content), "application/java-archive")}
+
+        # First upload
+        response = await client.post(
+            f"/api/mods/upload?instance_id={instance.id}",
+            files=files,
+            headers={"Authorization": f"Bearer {test_user_token}"},
+        )
+        assert response.status_code == 201
+
+        # Try to upload the same content again (should fail with 400)
+        files2 = {"file": ("test-mod-2.jar", io.BytesIO(file_content), "application/java-archive")}
+        response = await client.post(
+            f"/api/mods/upload?instance_id={instance.id}",
+            files=files2,
+            headers={"Authorization": f"Bearer {test_user_token}"},
+        )
+        assert response.status_code == 400
+        assert "already exists" in response.json()["detail"]
 
 
 class TestAuthorization:

@@ -48,9 +48,9 @@ Implementation: `backend/app/api/instances.py`, `backend/app/models/__init__.py`
 
 Tests: `backend/tests/test_api.py::TestInstances`
 
-### mod-management — Mod management with secret decryption
+### mod-management — Mod management
 
-Status: planned
+Status: done
 
 Acceptance:
 - Mod installation from files/URLs

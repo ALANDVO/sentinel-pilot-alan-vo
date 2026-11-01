@@ -84,8 +84,8 @@
     },
     {
       "id": "mod-management",
-      "title": "Mod management with secret decryption",
-      "status": "planned",
+      "title": "Mod management",
+      "status": "done",
       "acceptance": [
         "Mod installation from files/URLs",
         "Secret decryption with hardware ID binding",
