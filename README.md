@@ -1,4 +1,4 @@
-# Sentinel Pilot — Minecraft Launcher Management
+# Sentinel Pilot — Minecraft Launcher Management — Alan Vo
 
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
