@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
@@ -38,6 +38,25 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # CSRF Cookie middleware
+    @app.middleware("http")
+    async def add_csrf_cookie(request: Request, call_next):
+        from app.core.security import generate_csrf_token, CSRF_COOKIE_NAME
+        response = await call_next(request)
+        # Set CSRF cookie if not present
+        if CSRF_COOKIE_NAME not in request.cookies:
+            csrf_token = generate_csrf_token()
+            response.set_cookie(
+                key=CSRF_COOKIE_NAME,
+                value=csrf_token,
+                httponly=True,
+                secure=settings.environment == "production",
+                samesite="lax",
+                max_age=3600,
+            )
+        return response
+
 
     # Static files for uploads
     app.mount("/uploads", StaticFiles(directory="./uploads"), name="uploads")

@@ -5,17 +5,61 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
 from datetime import datetime, timedelta
+import secrets
 
-from app.core.config import get_settings
+import app.core.config as config_module
 from app.core.database import get_db
 from app.models import User
-
-settings = get_settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 
+# CSRF Protection
+CSRF_TOKEN_KEY = "csrf_token"
+CSRF_HEADER_NAME = "X-CSRF-Token"
+CSRF_COOKIE_NAME = "csrf_token"
+
+
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+async def verify_csrf_token(request: Request) -> bool:
+    """
+    Verify CSRF token for state-changing requests.
+    Checks both header and cookie (double-submit cookie pattern).
+    """
+    settings = config_module.get_settings()
+    # Skip CSRF for safe methods
+    if request.method in ("GET", "HEAD", "OPTIONS", "TRACE"):
+        return True
+
+    # Skip CSRF in demo mode
+    if settings.demo_mode:
+        return True
+
+    # Get token from header
+    header_token = request.headers.get(CSRF_HEADER_NAME)
+    # Get token from cookie
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+
+    if not header_token or not cookie_token:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token missing",
+        )
+
+    if not secrets.compare_digest(header_token, cookie_token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token mismatch",
+        )
+
+    return True
+
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    settings = config_module.get_settings()
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -27,6 +71,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def verify_token(token: str) -> Optional[dict]:
+    settings = config_module.get_settings()
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         return payload
