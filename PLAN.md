@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-skeleton
+instance-management
 
 ## Roadmap
 
@@ -26,7 +26,7 @@ Tests: `backend/tests/test_api.py`, `frontend/src/components/UI.test.tsx`
 
 ### auth — OIDC authentication with Keycloak
 
-Status: planned
+Status: done
 
 Acceptance:
 - Backend session management with HttpOnly cookies
@@ -34,6 +34,10 @@ Acceptance:
 - Frontend login/logout flow
 - Protected API endpoints
 - Demo mode for local development
+
+Implementation: `backend/app/api/auth.py`, `backend/app/core/security.py`, `backend/app/core/config.py`, `backend/app/core/oidc.py`, `backend/app/main.py`, `frontend/src/hooks/useAuth.ts`, `frontend/src/api/client.ts`, `frontend/src/pages/Login.tsx`, `frontend/src/pages/Register.tsx`
+
+Tests: `backend/tests/test_api.py::TestAuth`, `backend/tests/test_csrf.py`
 
 ### instance-management — Minecraft instance management
 

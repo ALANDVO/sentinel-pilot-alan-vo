@@ -5,6 +5,7 @@ from sqlalchemy import select
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime, timedelta
+import secrets
 
 from app.core.config import get_settings
 from app.core.database import get_db
@@ -14,7 +15,9 @@ from app.core.security import (
     get_current_user,
     get_current_active_user,
     require_role,
+    verify_csrf_token,
 )
+from app.core.oidc import oidc_client
 from app.models import User, AuditLog
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -55,10 +58,21 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
 
 
+class OIDCLoginRequest(BaseModel):
+    redirect_uri: str
+
+
+class OIDCCallbackRequest(BaseModel):
+    code: str
+    redirect_uri: str
+    state: str
+
+
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
+    _csrf: bool = Depends(verify_csrf_token),
 ):
     # Check if user exists
     result = await db.execute(select(User).where(User.email == user_data.email))
@@ -103,6 +117,7 @@ async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
+    _csrf: bool = Depends(verify_csrf_token),
 ):
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -158,6 +173,7 @@ async def logout(
     request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _csrf: bool = Depends(verify_csrf_token),
 ):
     response.delete_cookie(key="access_token", httponly=True, secure=settings.environment == "production", samesite="lax")
 
@@ -184,6 +200,7 @@ async def update_me(
     user_update: UserUpdate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    _csrf: bool = Depends(verify_csrf_token),
 ):
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -198,3 +215,119 @@ async def update_me(
     await db.refresh(current_user)
 
     return current_user
+
+
+# OIDC/Keycloak endpoints
+@router.get("/oidc/login")
+async def oidc_login(redirect_uri: str):
+    """Initiate OIDC login flow with Keycloak."""
+    state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(32)
+    auth_url = oidc_client.get_auth_url(redirect_uri, state, nonce)
+    return {"auth_url": auth_url, "state": state, "nonce": nonce}
+
+
+@router.post("/oidc/callback")
+async def oidc_callback(
+    response: Response,
+    callback_data: OIDCCallbackRequest,
+    db: AsyncSession = Depends(get_db),
+    _csrf: bool = Depends(verify_csrf_token),
+):
+    """Handle OIDC callback from Keycloak."""
+    # Exchange code for tokens
+    tokens = await oidc_client.exchange_code_for_tokens(
+        callback_data.code,
+        callback_data.redirect_uri,
+    )
+
+    # Verify ID token
+    id_token = tokens.get("id_token")
+    if not id_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No ID token in response",
+        )
+
+    payload = await oidc_client.verify_id_token(id_token)
+
+    # Get user info
+    userinfo = await oidc_client.get_userinfo(tokens["access_token"])
+
+    # Find or create user
+    email = userinfo.get("email") or payload.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not found in token",
+        )
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # Create new user from Keycloak
+        user = User(
+            email=email,
+            full_name=userinfo.get("name") or userinfo.get("preferred_username"),
+            role="viewer",
+            is_active=True,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    elif not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+        )
+
+    # Create session token
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        data={"sub": str(user.id), "email": user.email, "role": user.role},
+        expires_delta=access_token_expires,
+    )
+
+    # Set HttpOnly cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings.environment == "production",
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60,
+    )
+
+    # Audit log
+    audit = AuditLog(
+        user_id=user.id,
+        action="oidc_login",
+        resource_type="session",
+        resource_id=str(user.id),
+        details=f"User logged in via OIDC: {user.email}",
+    )
+    db.add(audit)
+    await db.commit()
+
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
+
+
+@router.get("/oidc/logout")
+async def oidc_logout(redirect_uri: str):
+    """Get Keycloak logout URL."""
+    logout_url = oidc_client.get_logout_url(redirect_uri)
+    return {"logout_url": logout_url}
+
+
+@router.get("/oidc/config")
+async def oidc_config():
+    """Get OIDC configuration for frontend."""
+    return {
+        "keycloak_url": settings.keycloak_url,
+        "realm": settings.keycloak_realm,
+        "client_id": settings.keycloak_client_id,
+        "auth_url": oidc_client.auth_url,
+        "token_url": oidc_client.token_url,
+    }
+

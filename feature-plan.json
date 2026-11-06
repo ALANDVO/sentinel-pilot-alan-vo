@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "skeleton",
+  "current_feature": "instance-management",
   "features": [
     {
       "id": "skeleton",
@@ -52,7 +52,7 @@
     {
       "id": "auth",
       "title": "OIDC authentication with Keycloak",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Backend session management with HttpOnly cookies",
         "CSRF protection on writes",
@@ -60,8 +60,21 @@
         "Protected API endpoints",
         "Demo mode for local development"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/api/auth.py",
+        "backend/app/core/security.py",
+        "backend/app/core/config.py",
+        "backend/app/core/oidc.py",
+        "backend/app/main.py",
+        "frontend/src/hooks/useAuth.ts",
+        "frontend/src/api/client.ts",
+        "frontend/src/pages/Login.tsx",
+        "frontend/src/pages/Register.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_api.py::TestAuth",
+        "backend/tests/test_csrf.py"
+      ]
     },
     {
       "id": "instance-management",
