@@ -86,3 +86,6 @@ Implementation: `frontend/src/hooks/useTheme.ts`, `frontend/src/components/UI.ts
 
 Tests: `frontend/src/components/UI.test.tsx`
 
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

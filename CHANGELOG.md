@@ -54,3 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Role-based access control (viewer, operator, admin)
 - Demo mode restricted to localhost
 - No hardcoded secrets or credentials
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

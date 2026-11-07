@@ -295,3 +295,7 @@ MIT License — Copyright (c) 2026 Alan Vo <alanvo@gmail.com>
 - React/TypeScript frontend with authentication
 - Docker Compose with Keycloak OIDC
 - CI/CD pipeline with tests and Docker builds
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)
