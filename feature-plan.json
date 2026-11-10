@@ -89,10 +89,12 @@
         "backend/app/api/instances.py",
         "backend/app/models/__init__.py",
         "frontend/src/pages/Instances.tsx",
-        "frontend/src/hooks/useInstances.ts"
+        "frontend/src/hooks/useInstances.ts",
+        "backend/app/api/versions.py"
       ],
       "tests": [
-        "backend/tests/test_api.py::TestInstances"
+        "backend/tests/test_api.py::TestInstances",
+        "backend/tests/test_api.py::TestVersions"
       ]
     },
     {
