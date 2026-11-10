@@ -665,3 +665,61 @@ class TestAuthorization:
         response = await client.get(f"/api/instances/{instance.id}", headers={"Authorization": f"Bearer {test_user_token}"})
         assert response.status_code == 404  # Not found because it's not theirs
 
+
+
+class TestVersions:
+    async def test_minecraft_versions(self, client):
+        response = await client.get("/api/versions/minecraft")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) > 0
+        # Check structure
+        assert "id" in data[0]
+        assert "type" in data[0]
+        assert "url" in data[0]
+        assert "time" in data[0]
+        assert "releaseTime" in data[0]
+
+    async def test_minecraft_versions_filter_type(self, client):
+        response = await client.get("/api/versions/minecraft?type_filter=release&limit=5")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) <= 5
+        for version in data:
+            assert version["type"] == "release"
+
+    async def test_minecraft_latest(self, client):
+        response = await client.get("/api/versions/minecraft/latest")
+        assert response.status_code == 200
+        data = response.json()
+        assert "release" in data
+        assert "snapshot" in data
+
+    async def test_fabric_versions(self, client):
+        response = await client.get("/api/versions/fabric")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) > 0
+        assert "version" in data[0]
+        assert "stable" in data[0]
+
+    async def test_fabric_game_versions(self, client):
+        response = await client.get("/api/versions/fabric/game")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) > 0
+
+    async def test_loader_versions_fabric(self, client):
+        response = await client.get("/api/versions/loaders/fabric")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["loader"] == "fabric"
+        assert "versions" in data
+        assert isinstance(data["versions"], list)
+
+    async def test_loader_versions_invalid(self, client):
+        response = await client.get("/api/versions/loaders/invalid")
+        assert response.status_code == 400

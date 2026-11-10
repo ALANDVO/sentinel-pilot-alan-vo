@@ -48,9 +48,9 @@ Acceptance:
 - Version detection and listing
 - Instance launch configuration
 
-Implementation: `backend/app/api/instances.py`, `backend/app/models/__init__.py`, `frontend/src/pages/Instances.tsx`, `frontend/src/hooks/useInstances.ts`
+Implementation: `backend/app/api/instances.py`, `backend/app/models/__init__.py`, `frontend/src/pages/Instances.tsx`, `frontend/src/hooks/useInstances.ts`, `backend/app/api/versions.py`
 
-Tests: `backend/tests/test_api.py::TestInstances`
+Tests: `backend/tests/test_api.py::TestInstances`, `backend/tests/test_api.py::TestVersions`
 
 ### mod-management — Mod management
 
