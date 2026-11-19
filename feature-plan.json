@@ -118,13 +118,17 @@
     {
       "id": "multiplayer",
       "title": "Multiplayer protocol support",
-      "status": "planned",
+      "status": "in_progress",
       "acceptance": [
         "Scaffolding-MC protocol support",
         "LAN/VPN instance sharing"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/api/protocol.py"
+      ],
+      "tests": [
+        "backend/tests/test_api.py::TestProtocol"
+      ]
     },
     {
       "id": "theme-ui",
