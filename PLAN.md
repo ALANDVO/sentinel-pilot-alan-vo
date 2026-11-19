@@ -67,11 +67,15 @@ Tests: `backend/tests/test_api.py::TestMods`
 
 ### multiplayer — Multiplayer protocol support
 
-Status: planned
+Status: in_progress
 
 Acceptance:
 - Scaffolding-MC protocol support
 - LAN/VPN instance sharing
+
+Implementation: `backend/app/api/protocol.py`
+
+Tests: `backend/tests/test_api.py::TestProtocol`
 
 ### theme-ui — Dark mode and responsive UI
 
