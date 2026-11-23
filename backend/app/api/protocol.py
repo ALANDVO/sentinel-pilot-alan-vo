@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from app.core.config import get_settings
 import base64
 
 router = APIRouter(prefix="/protocol", tags=["protocol"])
@@ -42,11 +43,12 @@ async def minecraft_resource_status(request: Request):
     """
     # Determine server info - in production this would query real server stats
     # For now, use configured/default values
-    settings = request.app.state.settings
+    settings = get_settings()
 
     # Build a basic Minecraft resource response
     # Minecraft clients expect specific format for resource packs/mods info
-    version_name = f"1.{settings.protocol_version or 20}"
+    # Default protocol version is 20 (Minecraft 1.20.x)
+    version_name = "1.20"
 
     # Try to decode favicon if configured, otherwise None
     favicon_b64 = getattr(settings, 'favicon_base64', None)
@@ -55,7 +57,7 @@ async def minecraft_resource_status(request: Request):
     return ResourceResponse(
         version=MinecraftVersion(
             name=version_name,
-            protocol=int(settings.protocol_version or 20),
+            protocol=20,
         ),
         players=MinecraftPlayers(
             max=getattr(settings, 'max_players', 20),

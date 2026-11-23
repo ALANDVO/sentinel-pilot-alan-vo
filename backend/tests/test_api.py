@@ -723,3 +723,37 @@ class TestVersions:
     async def test_loader_versions_invalid(self, client):
         response = await client.get("/api/versions/loaders/invalid")
         assert response.status_code == 400
+class TestProtocol:
+    async def test_minecraft_resource_status(self, client):
+        """Test /api/protocol/status endpoint"""
+        response = await client.post("/api/protocol/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "version" in data
+        assert "players" in data
+        assert "description" in data
+        v = data["version"]
+        assert "name" in v
+        assert "protocol" in v
+        p = data["players"]
+        assert "max" in p
+        assert "online" in p
+
+    async def test_minecraft_ping(self, client):
+        """Test /api/protocol/ping endpoint"""
+        response = await client.post("/api/protocol/ping")
+        assert response.status_code == 200
+        data = response.json()
+        assert "version" in data
+        assert "players" in data
+        assert "description" in data
+
+    async def test_minecraft_resource_status_with_data(self, client, test_user_token):
+        """Test /api/protocol/status with configured data"""
+        response = await client.post("/api/protocol/status")
+        assert response.status_code == 200
+        data = response.json()
+        v = data["version"]
+        # Should have protocol version from settings (default 20)
+        assert v["protocol"] in [20]
+        assert v["name"].startswith("1.")

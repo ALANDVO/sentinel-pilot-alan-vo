@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.5.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.4.1 — work-in-progress checkpoint
+
+### Added
+- **Multiplayer protocol support**: Scaffolding-MC status and ping endpoints
+  - `GET /api/protocol/status` - Returns Minecraft server resource info
+  - `GET /api/protocol/ping` - Simplified ping variant
+  - Default protocol version 20, motd "Sentinel Pilot", max_players 20
+- Protocol test coverage: `TestProtocol` with 3 tests in `backend/tests/test_api.py`
+
+### Changed
+- `protocol.py` refactored to use `get_settings()` from `app.core.config`
+- Updated roadmap status: multiplayer feature completed
+
+### Security
+- No new security changes
+
+---
+
 ## 1.4.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
